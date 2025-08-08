@@ -2,10 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Minesweeper</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
   <style>
     :root {
@@ -17,9 +15,7 @@
       --mine: #f43f5e;
       --revealed: #2b2f38;
       --accent: #38bdf8;
-      --transition: all 0.2s ease-in-out;
       --font: 'Inter', sans-serif;
-
       --number-1: #60a5fa;
       --number-2: #34d399;
       --number-3: #f59e0b;
@@ -41,67 +37,42 @@
       flex-direction: column;
       align-items: center;
       padding: 2rem;
-      transition: var(--transition);
     }
 
     @keyframes subtleShift {
-      0% {
-        background-position: 0% 50%;
-      }
-      50% {
-        background-position: 100% 50%;
-      }
-      100% {
-        background-position: 0% 50%;
-      }
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
 
     h1 {
-      margin-bottom: 0.5rem;
-      font-weight: 600;
       font-size: 2rem;
+      margin-bottom: 1rem;
     }
 
     .controls {
       display: flex;
-      flex-wrap: wrap;
       gap: 1rem;
-      margin-bottom: 1rem;
-      align-items: center;
-      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
     }
 
-    select,
     button {
-      padding: 0.5rem 1rem;
-      border: none;
       background: var(--cell);
       color: var(--text);
+      border: none;
       border-radius: 10px;
+      padding: 0.5rem 1rem;
       cursor: pointer;
-      font-family: var(--font);
-      font-size: 0.95rem;
-      transition: var(--transition);
+      font-size: 1rem;
     }
 
-    select {
-      appearance: auto;
-    }
-
-    select option {
-      background-color: var(--cell);
-      color: var(--text);
-      border-radius: 10px;
-      padding: 0.5rem;
-    }
-
-    button:hover,
-    select:hover {
+    button:hover {
       background: var(--cell-hover);
     }
 
     #status {
-      font-size: 1rem;
+      margin-bottom: 1rem;
     }
 
     #game {
@@ -110,7 +81,6 @@
       background-color: var(--revealed);
       padding: 4px;
       border-radius: 10px;
-      transition: var(--transition);
     }
 
     .cell {
@@ -124,117 +94,68 @@
       line-height: 32px;
       cursor: pointer;
       user-select: none;
-      transition: var(--transition);
       font-weight: 600;
       font-family: monospace;
     }
 
-    .cell:hover {
-      background: var(--cell-hover);
+    .cell:hover { background: var(--cell-hover); }
+    .cell.revealed { background-color: var(--revealed); cursor: default; }
+    .cell.flagged { color: var(--flag); }
+    .cell.mine { background-color: var(--mine); color: #fff; }
+    .cell.revealed.number-1 { color: var(--number-1); }
+    .cell.revealed.number-2 { color: var(--number-2); }
+    .cell.revealed.number-3 { color: var(--number-3); }
+    .cell.revealed.number-4 { color: var(--number-4); }
+    .cell.revealed.number-5 { color: var(--number-5); }
+    .cell.revealed.number-6 { color: var(--number-6); }
+    .cell.revealed.number-7 { color: var(--number-7); }
+    .cell.revealed.number-8 { color: var(--number-8); }
+
+    dialog::backdrop {
+      background: rgba(0, 0, 0, 0.6);
     }
 
-    .cell.revealed {
-      background-color: var(--revealed);
-      cursor: default;
-    }
-
-    .cell.flagged {
-      background-color: var(--flag);
+    dialog {
+      border: none;
+      border-radius: 12px;
+      padding: 2rem;
+      background: #1c1f26;
       color: #fff;
-    }
-
-    .cell.mine {
-      background-color: var(--mine);
-      color: #fff;
-    }
-
-    .cell.revealed.number-1 {
-      color: var(--number-1);
-    }
-
-    .cell.revealed.number-2 {
-      color: var(--number-2);
-    }
-
-    .cell.revealed.number-3 {
-      color: var(--number-3);
-    }
-
-    .cell.revealed.number-4 {
-      color: var(--number-4);
-    }
-
-    .cell.revealed.number-5 {
-      color: var(--number-5);
-    }
-
-    .cell.revealed.number-6 {
-      color: var(--number-6);
-    }
-
-    .cell.revealed.number-7 {
-      color: var(--number-7);
-    }
-
-    .cell.revealed.number-8 {
-      color: var(--number-8);
-    }
-
-    @media (max-width: 600px) {
-      .cell {
-        width: 24px;
-        height: 24px;
-        line-height: 24px;
-        font-size: 14px;
-      }
-
-      #game {
-        padding: 2px;
-      }
+      font-family: var(--font);
+      max-width: 600px;
     }
   </style>
 </head>
 <body>
   <h1>Minesweeper</h1>
-
   <div class="controls">
-    <select id="difficulty">
-      <option value="easy">Easy (8x8, 10)</option>
-      <option value="medium">Medium (12x12, 20)</option>
-      <option value="hard">Hard (16x16, 40)</option>
-    </select>
+    <button onclick="setDifficulty('easy')">Easy</button>
+    <button onclick="setDifficulty('medium')">Medium</button>
+    <button onclick="setDifficulty('hard')">Hard</button>
     <button onclick="restartGame()">Restart</button>
-    <span id="status"
-      >Mines: <span id="mineCount">0</span> | Time: <span id="timer">0</span>s</span
-    >
+    <button onclick="toggleInstructions()">How to Play</button>
   </div>
-
+  <div id="status">Mines: <span id="mineCount">0</span> | Time: <span id="timer">0</span>s</div>
   <div id="game"></div>
 
-  <audio
-    id="clickSound"
-    src="https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3"
-  ></audio>
-  <audio
-    id="flagSound"
-    src="https://assets.mixkit.co/sfx/preview/mixkit-game-click-1114.mp3"
-  ></audio>
-  <audio
-    id="explosionSound"
-    src="https://assets.mixkit.co/sfx/preview/mixkit-explosion-1705.mp3"
-  ></audio>
+  <dialog id="instructions">
+    <h2>How to Play</h2>
+    <p>Click cells to reveal them. If you click a 💣 you lose. Right-click to place a flag (⚑) where you think a bomb is hidden. The numbers show how many mines are touching that cell.</p>
+    <form method="dialog">
+      <button>Close</button>
+    </form>
+  </dialog>
+
+  <audio id="clickSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_2cfb79c0b8.mp3?filename=click-124467.mp3"></audio>
+  <audio id="flagSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_01b546f2b3.mp3?filename=game-notification-124468.mp3"></audio>
+  <audio id="explosionSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_848ad7c6b8.mp3?filename=negative_beeps-6008.mp3"></audio>
 
   <script>
     let rows, cols, mineCount;
-    let board = [],
-      game = document.getElementById("game");
-    let firstClick = true;
-    let timer = 0,
-      timerInterval = null;
-
+    let board = [], firstClick = true, timer = 0, timerInterval;
+    const game = document.getElementById("game");
     const mineDisplay = document.getElementById("mineCount");
     const timerDisplay = document.getElementById("timer");
-
     const clickSound = document.getElementById("clickSound");
     const flagSound = document.getElementById("flagSound");
     const explosionSound = document.getElementById("explosionSound");
@@ -242,35 +163,60 @@
     const difficulties = {
       easy: { rows: 8, cols: 8, mines: 10 },
       medium: { rows: 12, cols: 12, mines: 20 },
-      hard: { rows: 16, cols: 16, mines: 40 },
+      hard: { rows: 16, cols: 16, mines: 40 }
     };
 
-    document
-      .getElementById("difficulty")
-      .addEventListener("change", restartGame);
+    function toggleInstructions() {
+      document.getElementById("instructions").showModal();
+    }
+
+    function setDifficulty(level) {
+      rows = difficulties[level].rows;
+      cols = difficulties[level].cols;
+      mineCount = difficulties[level].mines;
+      restartGame();
+    }
+
+    function restartGame() {
+      clearInterval(timerInterval);
+      timer = 0;
+      timerDisplay.textContent = "0";
+      mineDisplay.textContent = mineCount;
+      firstClick = true;
+      createBoard();
+    }
 
     function createBoard() {
-      game.innerHTML = "";
-      game.style.gridTemplateColumns = `repeat(${cols}, 32px)`;
       board = [];
+      game.innerHTML = "";
+      game.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
       for (let r = 0; r < rows; r++) {
-        board[r] = [];
+        let row = [];
         for (let c = 0; c < cols; c++) {
-          const cell = document.createElement("div");
-          cell.classList.add("cell");
-          cell.dataset.row = r;
-          cell.dataset.col = c;
-          cell.addEventListener("click", handleClick);
-          cell.addEventListener("contextmenu", handleRightClick);
-          game.appendChild(cell);
-          board[r][c] = {
-            element: cell,
-            mine: false,
+          let cell = {
             revealed: false,
+            mine: false,
             flagged: false,
-            adjacent: 0,
+            element: document.createElement("div"),
+            r, c
           };
+          cell.element.className = "cell";
+          cell.element.oncontextmenu = e => {
+            e.preventDefault();
+            toggleFlag(cell);
+          };
+          cell.element.onclick = () => {
+            if (firstClick) {
+              placeMines(r, c);
+              startTimer();
+              firstClick = false;
+            }
+            revealCell(cell);
+          };
+          game.appendChild(cell.element);
+          row.push(cell);
         }
+        board.push(row);
       }
     }
 
@@ -279,138 +225,78 @@
       while (placed < mineCount) {
         let r = Math.floor(Math.random() * rows);
         let c = Math.floor(Math.random() * cols);
-        if ((r === excludeR && c === excludeC) || board[r][c].mine) continue;
-        board[r][c].mine = true;
-        placed++;
-      }
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          board[r][c].adjacent = countAdjacent(r, c);
+        if (!board[r][c].mine && (r !== excludeR || c !== excludeC)) {
+          board[r][c].mine = true;
+          placed++;
         }
       }
-    }
-
-    function countAdjacent(r, c) {
-      let count = 0;
-      for (let dr = -1; dr <= 1; dr++) {
-        for (let dc = -1; dc <= 1; dc++) {
-          let nr = r + dr,
-            nc = c + dc;
-          if (
-            nr >= 0 &&
-            nr < rows &&
-            nc >= 0 &&
-            nc < cols &&
-            board[nr][nc].mine
-          ) {
-            count++;
-          }
-        }
-      }
-      return count;
-    }
-
-    function handleClick(e) {
-      const r = parseInt(this.dataset.row);
-      const c = parseInt(this.dataset.col);
-      const cell = board[r][c];
-      if (cell.flagged || cell.revealed) return;
-
-      if (firstClick) {
-        placeMines(r, c);
-        firstClick = false;
-        startTimer();
-      }
-      reveal(r, c);
-      clickSound.currentTime = 0;
-      clickSound.play();
-    }
-
-    function handleRightClick(e) {
-      e.preventDefault();
-      const r = parseInt(this.dataset.row);
-      const c = parseInt(this.dataset.col);
-      const cell = board[r][c];
-      if (cell.revealed) return;
-      cell.flagged = !cell.flagged;
-      cell.element.classList.toggle("flagged");
-      cell.element.textContent = cell.flagged ? "🚩" : "";
-      updateMineCount();
-      flagSound.currentTime = 0;
-      flagSound.play();
-    }
-
-    function reveal(r, c) {
-      const cell = board[r][c];
-      if (cell.revealed || cell.flagged) return;
-      cell.revealed = true;
-      cell.element.classList.add("revealed");
-      if (cell.mine) {
-        cell.element.classList.add("mine");
-        cell.element.textContent = "💣";
-        stopTimer();
-        revealAll();
-        explosionSound.play();
-        return;
-      }
-      if (cell.adjacent > 0) {
-        cell.element.textContent = cell.adjacent;
-        cell.element.classList.add(`number-${cell.adjacent}`);
-      } else {
-        for (let dr = -1; dr <= 1; dr++) {
-          for (let dc = -1; dc <= 1; dc++) {
-            let nr = r + dr,
-              nc = c + dc;
-            if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
-              reveal(nr, nc);
-            }
-          }
-        }
-      }
-    }
-
-    function revealAll() {
-      board.flat().forEach((cell) => {
-        if (cell.mine) {
-          cell.element.classList.add("mine");
-          cell.element.textContent = "💣";
-        }
-        cell.revealed = true;
-        cell.element.classList.add("revealed");
-      });
-    }
-
-    function updateMineCount() {
-      const flagged = board.flat().filter((c) => c.flagged).length;
-      mineDisplay.textContent = mineCount - flagged;
     }
 
     function startTimer() {
-      timer = 0;
       timerInterval = setInterval(() => {
         timer++;
         timerDisplay.textContent = timer;
       }, 1000);
     }
 
-    function stopTimer() {
-      clearInterval(timerInterval);
-      timerInterval = null;
+    function toggleFlag(cell) {
+      if (cell.revealed) return;
+      cell.flagged = !cell.flagged;
+      flagSound.play();
+      cell.element.textContent = cell.flagged ? \"⚑\" : \"\";
+      mineDisplay.textContent = mineCount - board.flat().filter(c => c.flagged).length;
     }
 
-    function restartGame() {
-      const difficulty = document.getElementById("difficulty").value;
-      rows = difficulties[difficulty].rows;
-      cols = difficulties[difficulty].cols;
-      mineCount = difficulties[difficulty].mines;
-      firstClick = true;
-      stopTimer();
-      timerDisplay.textContent = "0";
-      mineDisplay.textContent = mineCount;
-      createBoard();
+    function revealCell(cell) {
+      if (cell.revealed || cell.flagged) return;
+      cell.revealed = true;
+      cell.element.classList.add("revealed");
+      clickSound.play();
+      if (cell.mine) {
+        cell.element.textContent = \"💣\";
+        cell.element.classList.add(\"mine\");
+        explosionSound.play();
+        clearInterval(timerInterval);
+        revealAllMines();
+        return;
+      }
+      const count = countAdjacentMines(cell);
+      if (count > 0) {
+        cell.element.textContent = count;
+        cell.element.classList.add(`number-${count}`);
+      } else {
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            let nr = cell.r + dr, nc = cell.c + dc;
+            if (board[nr]?.[nc]) revealCell(board[nr][nc]);
+          }
+        }
+      }
     }
 
-    restartGame();
+    function countAdjacentMines(cell) {
+      let count = 0;
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          if (dr === 0 && dc === 0) continue;
+          let nr = cell.r + dr, nc = cell.c + dc;
+          if (board[nr]?.[nc]?.mine) count++;
+        }
+      }
+      return count;
+    }
+
+    function revealAllMines() {
+      board.flat().forEach(cell => {
+        if (cell.mine) {
+          cell.element.textContent = \"💣\";
+          cell.element.classList.add(\"mine\");
+        }
+      });
+    }
+
+    // Initialize game
+    setDifficulty(\"easy\");
   </script>
 </body>
 </html>
