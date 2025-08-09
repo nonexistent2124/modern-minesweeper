@@ -408,7 +408,7 @@
       cell.element.classList.add("revealed");
       if (cell.mine) {
         cell.element.classList.add("mine");
-        cell.element.textContent = "💣";
+        cell.element.textContent = "";
         stopTimer();
         revealAll();
         explosionSound.play();
