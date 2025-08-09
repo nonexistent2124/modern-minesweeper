@@ -60,12 +60,16 @@
       display: flex;
       flex-wrap: wrap;
       gap: 1rem;
-      margin-bottom: 1rem;
+      margin-bottom: 1rem; /* More space between stats and board */
       align-items: center;
       justify-content: center;
     }
 
-    select,
+    #game {
+      margin-top: 1.7rem; /* add more vertical spacing */
+    }
+
+
     button {
       padding: 0.5rem 1rem;
       border: none;
@@ -76,15 +80,41 @@
       font-family: var(--font);
       font-size: 0.95rem;
       transition: var(--transition);
+      position: relative;
+      font-weight: 600;
+      user-select: none;
+      outline-offset: 3px;
     }
 
-    button:hover,
-    select:hover {
+    button:hover {
       background: var(--cell-hover);
+      font-weight: 700;
+    }
+
+    button:active {
+      animation: clickAnim 0.2s ease forwards;
+    }
+
+    @keyframes clickAnim {
+      0% { transform: scale(1); }
+      50% { transform: scale(0.9); }
+      100% { transform: scale(1); }
+    }
+
+    /* Checkmark on left with space, white color */
+    button.selected::before {
+      content: "✓";
+      position: relative;
+      left: 0;
+      color: #fff;
+      font-weight: 900;
+      font-size: 1rem;
+      margin-right: 0.5rem;
     }
 
     #status {
       font-size: 1rem;
+      user-select: none;
     }
 
     #game {
@@ -142,41 +172,61 @@
       border-radius: 10px;
       text-align: center;
       z-index: 10;
+      width: 280px;
+      box-sizing: border-box;
     }
     #gameOverMenu h2 {
       margin-bottom: 1rem;
+      font-weight: 600;
     }
     #gameOverMenu button {
       margin: 0.3rem;
+      width: 100px;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      outline-offset: 3px;
+      transition: var(--transition);
+    }
+    #gameOverMenu button:hover {
+      font-weight: 700;
+      background: var(--cell-hover);
+    }
+    #gameOverMenu button:active {
+      animation: clickAnim 0.2s ease forwards;
+    }
+    #gameOverMenu button.observe {
+      width: 80px;
+      font-size: 0.85rem;
+      padding: 0.3rem 0.5rem;
     }
   </style>
 </head>
 <body>
   <h1>Minesweeper</h1>
 
-  <div class="controls">
-    <select id="difficulty">
-      <option value="easy">Easy (8x8, 10)</option>
-      <option value="medium">Medium (12x12, 20)</option>
-      <option value="hard">Hard (16x16, 40)</option>
-    </select>
-    <button onclick="restartGame()">Restart</button>
-    <button onclick="quitGame()">Quit</button>
-    <span id="status">Mines: <span id="mineCount">0</span> | Time: <span id="timer">0</span>s</span>
+  <div class="controls" id="difficultyButtons">
+    <button data-difficulty="easy">Easy (8x8, 10)</button>
+    <button data-difficulty="medium">Medium (12x12, 20)</button>
+    <button data-difficulty="hard">Hard (16x16, 40)</button>
+    <button id="restartBtn">Restart</button>
   </div>
+
+  <span id="status">Mines: <span id="mineCount">0</span> | Time: <span id="timer">0</span>s</span>
 
   <div id="game"></div>
 
   <!-- Game Over Menu -->
   <div id="gameOverMenu">
-    <h2>💥 Game Over!</h2>
-    <button onclick="restartGame()">Restart</button>
-    <button onclick="observeBoard()">Observe the Board</button>
+    <h2>Game Over</h2>
+    <button id="gameOverRestartBtn">Restart</button>
+    <button class="observe" id="observeBtn">Observe the Board</button>
+    <button id="quitBtn">Quit</button>
   </div>
 
-  <audio id="clickSound" src="https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3"></audio>
-  <audio id="flagSound" src="https://assets.mixkit.co/sfx/preview/mixkit-game-click-1114.mp3"></audio>
-  <audio id="explosionSound" src="https://assets.mixkit.co/sfx/preview/mixkit-explosion-1705.mp3"></audio>
+  <audio id="clickSound" src="sounds/click.mp3"></audio>
+  <audio id="flagSound" src="sounds/flag.mp3"></audio>
+  <audio id="explosionSound" src="sounds/bomb.mp3"></audio>
 
   <script>
     let rows, cols, mineCount;
@@ -184,14 +234,21 @@
     let firstClick = true;
     let timer = 0, timerInterval = null;
     let gameOver = false;
+    let currentDifficulty = "easy";
 
     const mineDisplay = document.getElementById("mineCount");
     const timerDisplay = document.getElementById("timer");
     const gameOverMenu = document.getElementById("gameOverMenu");
-
+    const difficultyButtonsContainer = document.getElementById("difficultyButtons");
+    const difficultyButtons = difficultyButtonsContainer.querySelectorAll('button[data-difficulty]');
     const clickSound = document.getElementById("clickSound");
     const flagSound = document.getElementById("flagSound");
     const explosionSound = document.getElementById("explosionSound");
+
+    const restartBtn = document.getElementById("restartBtn");
+    const quitBtn = document.getElementById("quitBtn");
+    const gameOverRestartBtn = document.getElementById("gameOverRestartBtn");
+    const observeBtn = document.getElementById("observeBtn");
 
     const difficulties = {
       easy: { rows: 8, cols: 8, mines: 10 },
@@ -199,10 +256,63 @@
       hard: { rows: 16, cols: 16, mines: 40 },
     };
 
-    document.getElementById("difficulty").addEventListener("change", restartGame);
+    // Play click sound and scale animation on buttons (except cell buttons)
+    function playClickSoundAndAnimate(btn) {
+      clickSound.currentTime = 0;
+      clickSound.play();
+      btn.style.animation = 'clickAnim 0.2s ease forwards';
+      btn.addEventListener('animationend', () => {
+        btn.style.animation = '';
+      }, { once: true });
+    }
+
+    difficultyButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        if (gameOver) return;
+        playClickSoundAndAnimate(btn);
+        currentDifficulty = btn.dataset.difficulty;
+        updateDifficultyButtons();
+        restartGame();
+      });
+    });
+
+    restartBtn.addEventListener("click", () => {
+      playClickSoundAndAnimate(restartBtn);
+      restartGame();
+    });
+
+    gameOverRestartBtn.addEventListener("click", () => {
+      playClickSoundAndAnimate(gameOverRestartBtn);
+      restartGame();
+    });
+
+    observeBtn.addEventListener("click", () => {
+      playClickSoundAndAnimate(observeBtn);
+      observeBoard();
+    });
+
+    quitBtn.addEventListener("click", () => {
+      playClickSoundAndAnimate(quitBtn);
+      setTimeout(() => {
+        if (confirm("Are you sure you want to quit? This will close the tab.")) {
+          window.close();
+          // fallback if window.close() is blocked:
+          // alert("Please close this tab manually.");
+        }
+      }, 200);
+    });
+
+    function updateDifficultyButtons() {
+      difficultyButtons.forEach(btn => {
+        btn.classList.toggle("selected", btn.dataset.difficulty === currentDifficulty);
+      });
+    }
 
     function createBoard() {
       game.innerHTML = "";
+      rows = difficulties[currentDifficulty].rows;
+      cols = difficulties[currentDifficulty].cols;
+      mineCount = difficulties[currentDifficulty].mines;
       game.style.gridTemplateColumns = `repeat(${cols}, 32px)`;
       board = [];
       for (let r = 0; r < rows; r++) {
@@ -224,6 +334,12 @@
           };
         }
       }
+      mineDisplay.textContent = mineCount;
+      timerDisplay.textContent = "0";
+      firstClick = true;
+      gameOver = false;
+      hideGameOverMenu();
+      updateDifficultyButtons();
     }
 
     function placeMines(excludeR, excludeC) {
@@ -311,6 +427,7 @@
           }
         }
       }
+      checkWin();
     }
 
     function revealAll() {
@@ -343,24 +460,11 @@
     }
 
     function restartGame() {
-      const difficulty = document.getElementById("difficulty").value;
-      rows = difficulties[difficulty].rows;
-      cols = difficulties[difficulty].cols;
-      mineCount = difficulties[difficulty].mines;
-      firstClick = true;
-      stopTimer();
-      timerDisplay.textContent = "0";
-      mineDisplay.textContent = mineCount;
-      gameOver = false;
-      hideGameOverMenu();
       createBoard();
     }
 
     function quitGame() {
-      game.innerHTML = "<h2>Thanks for playing!</h2>";
-      stopTimer();
-      hideGameOverMenu();
-      gameOver = true;
+      // This is handled by quitBtn listener
     }
 
     function observeBoard() {
@@ -375,6 +479,28 @@
       gameOverMenu.style.display = "none";
     }
 
+    function checkWin() {
+      // Win if all non-mine cells revealed
+      let won = true;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const cell = board[r][c];
+          if (!cell.mine && !cell.revealed) {
+            won = false;
+            break;
+          }
+        }
+        if (!won) break;
+      }
+      if (won && !gameOver) {
+        stopTimer();
+        alert(`You cleared the board in ${timer} seconds!`);
+        gameOver = true;
+        showGameOverMenu();
+      }
+    }
+
+    // Initialize game on load
     restartGame();
   </script>
 </body>
