@@ -138,6 +138,9 @@
       transition: var(--transition);
       font-weight: 600;
       font-family: monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .cell:hover {
@@ -149,21 +152,24 @@
       cursor: default;
     }
 
-    /* Flagged cells show Unicode flag ⚑ with normal background */
+    /* Flagged cells show Unicode flag ⚑, perfectly centered */
     .cell.flagged {
       background-color: var(--cell);
       color: white;
       cursor: pointer;
       font-weight: 900;
-      font-size: 18px;
+      font-size: 20px;
       user-select: none;
-      line-height: 32px;
+      /* flex centering from .cell applies */
     }
 
-    /* Mines reveal with red background, no text */
+    /* Mines reveal with red background and bomb emoji centered */
     .cell.mine {
       background-color: var(--mine);
-      color: transparent;
+      color: white;
+      font-size: 20px;
+      user-select: none;
+      /* flex centering from .cell applies */
     }
 
     .cell.revealed.number-1 { color: var(--number-1); }
@@ -321,9 +327,10 @@
       playClickSoundAndAnimate(quitBtn);
       setTimeout(() => {
         if (confirm("Are you sure you want to quit? This will close the tab.")) {
-          window.close();
-          // fallback if window.close() is blocked:
-          // alert("Please close this tab manually.");
+          window.open('', '_self').close();
+          setTimeout(() => {
+            alert("Please close this tab manually if it did not close automatically.");
+          }, 300);
         }
       }, 200);
     });
@@ -442,7 +449,7 @@
       cell.element.classList.add("revealed");
       if (cell.mine) {
         cell.element.classList.add("mine");
-        cell.element.textContent = "";
+        cell.element.textContent = "💣";
         stopTimer();
         revealAll();
         explosionSound.play();
@@ -468,7 +475,7 @@
       board.flat().forEach((cell) => {
         if (cell.mine) {
           cell.element.classList.add("mine");
-          cell.element.textContent = ""; // no bomb emoji
+          cell.element.textContent = "💣";
           cell.element.classList.remove("flagged");
         }
         cell.revealed = true;
@@ -496,10 +503,6 @@
 
     function restartGame() {
       createBoard();
-    }
-
-    function quitGame() {
-      // handled in quitBtn click
     }
 
     function observeBoard() {
