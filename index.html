@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Minesweeper</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
   <style>
@@ -28,9 +28,9 @@
 
     body {
       font-family: var(--font);
-      background: linear-gradient(120deg, #0f1117 0%, #1a1c22 50%, #0f1117 100%);
-      background-size: 400% 400%;
-      animation: subtleShift 60s ease infinite;
+      background: linear-gradient(270deg, #0f1117, #1a1c22, #20232a, #0f1117);
+      background-size: 800% 800%;
+      animation: dynamicShift 25s ease-in-out infinite;
       color: var(--text);
       margin: 0;
       display: flex;
@@ -39,15 +39,18 @@
       padding: 2rem;
     }
 
-    @keyframes subtleShift {
+    @keyframes dynamicShift {
       0% { background-position: 0% 50%; }
+      25% { background-position: 50% 100%; }
       50% { background-position: 100% 50%; }
+      75% { background-position: 50% 0%; }
       100% { background-position: 0% 50%; }
     }
 
     h1 {
       font-size: 2rem;
       margin-bottom: 1rem;
+      font-family: var(--font);
     }
 
     .controls {
@@ -65,14 +68,19 @@
       padding: 0.5rem 1rem;
       cursor: pointer;
       font-size: 1rem;
+      font-family: var(--font);
+      font-weight: 400;
+      transition: background 0.2s ease, font-weight 0.2s ease;
     }
-
     button:hover {
       background: var(--cell-hover);
+      font-weight: 600;
     }
 
     #status {
       margin-bottom: 1rem;
+      font-weight: 600;
+      font-family: var(--font);
     }
 
     #game {
@@ -81,6 +89,7 @@
       background-color: var(--revealed);
       padding: 4px;
       border-radius: 10px;
+      user-select: none;
     }
 
     .cell {
@@ -93,15 +102,26 @@
       text-align: center;
       line-height: 32px;
       cursor: pointer;
-      user-select: none;
       font-weight: 600;
-      font-family: monospace;
+      font-family: var(--font);
+      transition: background 0.2s ease, color 0.2s ease;
+      user-select: none;
+    }
+    .cell:hover {
+      background: var(--cell-hover);
+    }
+    .cell.revealed {
+      background-color: var(--revealed);
+      cursor: default;
+    }
+    .cell.flagged {
+      color: var(--flag);
+    }
+    .cell.mine {
+      background-color: var(--mine);
+      color: #fff;
     }
 
-    .cell:hover { background: var(--cell-hover); }
-    .cell.revealed { background-color: var(--revealed); cursor: default; }
-    .cell.flagged { color: var(--flag); }
-    .cell.mine { background-color: var(--mine); color: #fff; }
     .cell.revealed.number-1 { color: var(--number-1); }
     .cell.revealed.number-2 { color: var(--number-2); }
     .cell.revealed.number-3 { color: var(--number-3); }
@@ -123,11 +143,51 @@
       color: #fff;
       font-family: var(--font);
       max-width: 600px;
+      position: relative;
+    }
+
+    /* Close X button for instructions dialog */
+    #instructions .close-x {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 1.5rem;
+      font-weight: 600;
+      cursor: pointer;
+      line-height: 1;
+    }
+    #instructions .close-x:hover {
+      color: var(--accent);
+    }
+
+    /* Game Over dialog styles */
+    #gameOver h2 {
+      margin-top: 0;
+    }
+    #gameOver button {
+      margin: 0 0.5rem;
+    }
+
+    @media (max-width: 600px) {
+      .cell {
+        width: 28px;
+        height: 28px;
+        font-size: 14px;
+        line-height: 28px;
+      }
+      button {
+        font-size: 0.9rem;
+        padding: 0.4rem 0.8rem;
+      }
     }
   </style>
 </head>
 <body>
   <h1>Minesweeper</h1>
+
   <div class="controls">
     <button onclick="setDifficulty('easy')">Easy</button>
     <button onclick="setDifficulty('medium')">Medium</button>
@@ -135,15 +195,23 @@
     <button onclick="restartGame()">Restart</button>
     <button onclick="toggleInstructions()">How to Play</button>
   </div>
+
   <div id="status">Mines: <span id="mineCount">0</span> | Time: <span id="timer">0</span>s</div>
   <div id="game"></div>
 
   <dialog id="instructions">
+    <button class="close-x" aria-label="Close">&times;</button>
     <h2>How to Play</h2>
     <p>Click cells to reveal them. If you click a 💣 you lose. Right-click to place a flag (⚑) where you think a bomb is hidden. The numbers show how many mines are touching that cell.</p>
-    <form method="dialog">
-      <button>Close</button>
-    </form>
+  </dialog>
+
+  <dialog id="gameOver">
+    <h2>Game Over</h2>
+    <p id="gameOverStats"></p>
+    <div style="text-align:center; margin-top: 1.5rem;">
+      <button id="restartGameBtn">Restart</button>
+      <button id="quitGameBtn">Quit</button>
+    </div>
   </dialog>
 
   <audio id="clickSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_2cfb79c0b8.mp3?filename=click-124467.mp3"></audio>
@@ -160,15 +228,28 @@
     const flagSound = document.getElementById("flagSound");
     const explosionSound = document.getElementById("explosionSound");
 
+    const instructionsDialog = document.getElementById("instructions");
+    const gameOverDialog = document.getElementById("gameOver");
+    const gameOverStats = document.getElementById("gameOverStats");
+    const restartGameBtn = document.getElementById("restartGameBtn");
+    const quitGameBtn = document.getElementById("quitGameBtn");
+
     const difficulties = {
       easy: { rows: 8, cols: 8, mines: 10 },
       medium: { rows: 12, cols: 12, mines: 20 },
       hard: { rows: 16, cols: 16, mines: 40 }
     };
 
+    // Show instructions dialog
     function toggleInstructions() {
-      document.getElementById("instructions").showModal();
+      if (typeof instructionsDialog.showModal === "function") instructionsDialog.showModal();
+      else alert("How to Play:\nClick cells to reveal them. Right-click to place a flag (⚑).");
     }
+
+    // Close instructions dialog when clicking X
+    instructionsDialog.querySelector(".close-x").onclick = () => {
+      instructionsDialog.close();
+    };
 
     function setDifficulty(level) {
       rows = difficulties[level].rows;
@@ -181,9 +262,10 @@
       clearInterval(timerInterval);
       timer = 0;
       timerDisplay.textContent = "0";
-      mineDisplay.textContent = mineCount;
+      mineDisplay.textContent = mineCount || 0;
       firstClick = true;
       createBoard();
+      if (gameOverDialog.open) gameOverDialog.close();
     }
 
     function createBoard() {
@@ -191,21 +273,17 @@
       game.innerHTML = "";
       game.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
       for (let r = 0; r < rows; r++) {
-        let row = [];
+        const row = [];
         for (let c = 0; c < cols; c++) {
-          let cell = {
-            revealed: false,
-            mine: false,
-            flagged: false,
-            element: document.createElement("div"),
-            r, c
-          };
-          cell.element.className = "cell";
-          cell.element.oncontextmenu = e => {
+          const div = document.createElement("div");
+          div.className = "cell";
+          const cell = { revealed: false, mine: false, flagged: false, element: div, r, c };
+
+          div.oncontextmenu = function(e) {
             e.preventDefault();
             toggleFlag(cell);
           };
-          cell.element.onclick = () => {
+          div.onclick = function() {
             if (firstClick) {
               placeMines(r, c);
               startTimer();
@@ -213,7 +291,7 @@
             }
             revealCell(cell);
           };
-          game.appendChild(cell.element);
+          game.appendChild(div);
           row.push(cell);
         }
         board.push(row);
@@ -222,9 +300,9 @@
 
     function placeMines(excludeR, excludeC) {
       let placed = 0;
-      while (placed < mineCount) {
-        let r = Math.floor(Math.random() * rows);
-        let c = Math.floor(Math.random() * cols);
+      while (placed < (mineCount || 0)) {
+        const r = Math.floor(Math.random() * rows);
+        const c = Math.floor(Math.random() * cols);
         if (!board[r][c].mine && (r !== excludeR || c !== excludeC)) {
           board[r][c].mine = true;
           placed++;
@@ -233,6 +311,7 @@
     }
 
     function startTimer() {
+      clearInterval(timerInterval);
       timerInterval = setInterval(() => {
         timer++;
         timerDisplay.textContent = timer;
@@ -242,36 +321,41 @@
     function toggleFlag(cell) {
       if (cell.revealed) return;
       cell.flagged = !cell.flagged;
-      flagSound.play();
-      cell.element.textContent = cell.flagged ? \"⚑\" : \"\";
-      mineDisplay.textContent = mineCount - board.flat().filter(c => c.flagged).length;
+      flagSound.play().catch(() => {});
+      cell.element.textContent = cell.flagged ? "⚑" : "";
+      const flaggedCount = board.flat().filter(c => c.flagged).length;
+      mineDisplay.textContent = (mineCount || 0) - flaggedCount;
     }
 
     function revealCell(cell) {
       if (cell.revealed || cell.flagged) return;
       cell.revealed = true;
       cell.element.classList.add("revealed");
-      clickSound.play();
+      clickSound.play().catch(() => {});
       if (cell.mine) {
-        cell.element.textContent = \"💣\";
-        cell.element.classList.add(\"mine\");
-        explosionSound.play();
+        cell.element.textContent = "💣";
+        cell.element.classList.add("mine");
+        explosionSound.play().catch(() => {});
         clearInterval(timerInterval);
         revealAllMines();
+        showGameOver();
         return;
       }
       const count = countAdjacentMines(cell);
       if (count > 0) {
         cell.element.textContent = count;
-        cell.element.classList.add(`number-${count}`);
+        cell.element.classList.add("number-" + count);
       } else {
         for (let dr = -1; dr <= 1; dr++) {
           for (let dc = -1; dc <= 1; dc++) {
-            let nr = cell.r + dr, nc = cell.c + dc;
-            if (board[nr]?.[nc]) revealCell(board[nr][nc]);
+            const nr = cell.r + dr, nc = cell.c + dc;
+            if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+              revealCell(board[nr][nc]);
+            }
           }
         }
       }
+      checkWin();
     }
 
     function countAdjacentMines(cell) {
@@ -279,8 +363,8 @@
       for (let dr = -1; dr <= 1; dr++) {
         for (let dc = -1; dc <= 1; dc++) {
           if (dr === 0 && dc === 0) continue;
-          let nr = cell.r + dr, nc = cell.c + dc;
-          if (board[nr]?.[nc]?.mine) count++;
+          const nr = cell.r + dr, nc = cell.c + dc;
+          if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && board[nr][nc].mine) count++;
         }
       }
       return count;
@@ -289,14 +373,39 @@
     function revealAllMines() {
       board.flat().forEach(cell => {
         if (cell.mine) {
-          cell.element.textContent = \"💣\";
-          cell.element.classList.add(\"mine\");
+          cell.element.textContent = "💣";
+          cell.element.classList.add("mine");
         }
       });
     }
 
-    // Initialize game
-    setDifficulty(\"easy\");
+    function showGameOver() {
+      gameOverStats.textContent = `You lasted ${timer} second${timer !== 1 ? 's' : ''} with ${mineCount} mine${mineCount !== 1 ? 's' : ''}.`;
+      gameOverDialog.showModal();
+    }
+
+    function checkWin() {
+      // Win if all non-mine cells revealed
+      const allRevealed = board.flat().every(cell => cell.revealed || cell.mine);
+      if (allRevealed) {
+        clearInterval(timerInterval);
+        gameOverStats.textContent = `Congratulations! You cleared the board in ${timer} second${timer !== 1 ? 's' : ''}!`;
+        gameOverDialog.showModal();
+      }
+    }
+
+    restartGameBtn.onclick = () => {
+      gameOverDialog.close();
+      restartGame();
+    };
+
+    quitGameBtn.onclick = () => {
+      window.close();
+      /* fallback for browsers that block window.close() */
+      alert("Please close the tab to quit the game.");
+    };
+
+    setDifficulty("easy");
   </script>
 </body>
 </html>
