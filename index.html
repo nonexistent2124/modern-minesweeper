@@ -202,7 +202,7 @@
   <dialog id="instructions">
     <button class="close-x" aria-label="Close">&times;</button>
     <h2>How to Play</h2>
-    <p>Click cells to reveal them. If you click a 💣 you lose. Right-click to place a flag (⚑) where you think a bomb is hidden. The numbers show how many mines are touching that cell.</p>
+    <p>Click cells to reveal them. If you click a 💣, you lose. Right-click to place a flag (⚑) where you think a bomb is hidden. The numbers in the revealed cells show how many mines are touching that cell.</p>
   </dialog>
 
   <dialog id="gameOver">
@@ -402,7 +402,7 @@
     quitGameBtn.onclick = () => {
       window.close();
       /* fallback for browsers that block window.close() */
-      alert("Please close the tab to quit the game.");
+      alert("Are you sure you want to quit? This will close the tab.");
     };
 
     setDifficulty("easy");
