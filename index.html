@@ -60,15 +60,27 @@
       display: flex;
       flex-wrap: wrap;
       gap: 1rem;
-      margin-bottom: 1rem; /* More space between stats and board */
+      margin-bottom: 1rem;
       align-items: center;
       justify-content: center;
     }
 
-    #game {
-      margin-top: 1.7rem; /* add more vertical spacing */
+    #status {
+      font-size: 1rem;
+      user-select: none;
+      margin-top: 1.5rem; /* extra space above board */
+      margin-bottom: 0;
     }
 
+    #game {
+      margin-top: 1.7rem;
+      display: grid;
+      gap: 2px;
+      background-color: var(--revealed);
+      padding: 4px;
+      border-radius: 10px;
+      transition: var(--transition);
+    }
 
     button {
       padding: 0.5rem 1rem;
@@ -112,20 +124,6 @@
       margin-right: 0.5rem;
     }
 
-    #status {
-      font-size: 1rem;
-      user-select: none;
-    }
-
-    #game {
-      display: grid;
-      gap: 2px;
-      background-color: var(--revealed);
-      padding: 4px;
-      border-radius: 10px;
-      transition: var(--transition);
-    }
-
     .cell {
       width: 32px;
       height: 32px;
@@ -142,10 +140,31 @@
       font-family: monospace;
     }
 
-    .cell:hover { background: var(--cell-hover); }
-    .cell.revealed { background-color: var(--revealed); cursor: default; }
-    .cell.flagged { background-color: var(--flag); color: #fff; }
-    .cell.mine { background-color: var(--mine); color: #fff; }
+    .cell:hover {
+      background: var(--cell-hover);
+    }
+
+    .cell.revealed {
+      background-color: var(--revealed);
+      cursor: default;
+    }
+
+    /* Flagged cells show Unicode flag ⚑ with normal background */
+    .cell.flagged {
+      background-color: var(--cell);
+      color: white;
+      cursor: pointer;
+      font-weight: 900;
+      font-size: 18px;
+      user-select: none;
+      line-height: 32px;
+    }
+
+    /* Mines reveal with red background, no text */
+    .cell.mine {
+      background-color: var(--mine);
+      color: transparent;
+    }
 
     .cell.revealed.number-1 { color: var(--number-1); }
     .cell.revealed.number-2 { color: var(--number-2); }
@@ -157,8 +176,15 @@
     .cell.revealed.number-8 { color: var(--number-8); }
 
     @media (max-width: 600px) {
-      .cell { width: 24px; height: 24px; line-height: 24px; font-size: 14px; }
-      #game { padding: 2px; }
+      .cell {
+        width: 24px;
+        height: 24px;
+        line-height: 24px;
+        font-size: 14px;
+      }
+      #game {
+        padding: 2px;
+      }
     }
 
     /* Game Over Menu */
@@ -393,9 +419,17 @@
       const c = parseInt(this.dataset.col);
       const cell = board[r][c];
       if (cell.revealed) return;
+
       cell.flagged = !cell.flagged;
-      cell.element.classList.toggle("flagged");
-      cell.element.textContent = cell.flagged ? "🚩" : "";
+
+      if (cell.flagged) {
+        cell.element.textContent = "⚑";  // Unicode flag
+        cell.element.classList.add("flagged");
+      } else {
+        cell.element.textContent = "";
+        cell.element.classList.remove("flagged");
+      }
+
       updateMineCount();
       flagSound.currentTime = 0;
       flagSound.play();
@@ -434,7 +468,8 @@
       board.flat().forEach((cell) => {
         if (cell.mine) {
           cell.element.classList.add("mine");
-          cell.element.textContent = "💣";
+          cell.element.textContent = ""; // no bomb emoji
+          cell.element.classList.remove("flagged");
         }
         cell.revealed = true;
         cell.element.classList.add("revealed");
@@ -464,7 +499,7 @@
     }
 
     function quitGame() {
-      // This is handled by quitBtn listener
+      // handled in quitBtn click
     }
 
     function observeBoard() {
@@ -480,7 +515,6 @@
     }
 
     function checkWin() {
-      // Win if all non-mine cells revealed
       let won = true;
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
