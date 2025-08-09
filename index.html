@@ -80,6 +80,7 @@
       padding: 4px;
       border-radius: 10px;
       transition: var(--transition);
+      position: relative;
     }
 
     button {
@@ -138,6 +139,9 @@
       transition: var(--transition);
       font-weight: 600;
       font-family: monospace;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
     .cell:hover {
@@ -160,10 +164,23 @@
       line-height: 32px;
     }
 
-    /* Mines reveal with red background, no text */
+    /* Mines reveal with red background and bomb emoji */
     .cell.mine {
       background-color: var(--mine);
-      color: transparent;
+      color: white;
+      font-size: 20px;
+      user-select: none;
+      line-height: 32px;
+    }
+
+    /* Wrong flags show red X */
+    .cell.wrong-flag {
+      background-color: var(--cell);
+      color: var(--flag);
+      font-size: 18px;
+      font-weight: 900;
+      user-select: none;
+      line-height: 32px;
     }
 
     .cell.revealed.number-1 { color: var(--number-1); }
@@ -190,46 +207,52 @@
     /* Game Over Menu */
     #gameOverMenu {
       display: none;
-      position: fixed;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      background: var(--cell);
-      padding: 1.5rem;
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15,17,23,0.95);
       border-radius: 10px;
       text-align: center;
       z-index: 10;
-      width: 280px;
+      padding: 2rem 1rem;
       box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
     }
     #gameOverMenu h2 {
-      margin-bottom: 1rem;
-      font-weight: 600;
+      margin: 0;
+      font-weight: 700;
+      font-size: 2rem;
+      color: var(--flag);
     }
     #gameOverMenu button {
-      margin: 0.3rem;
-      width: 100px;
+      width: 160px;
+      padding: 0.7rem 1rem;
       font-weight: 600;
       cursor: pointer;
       user-select: none;
       outline-offset: 3px;
+      border-radius: 10px;
+      background: var(--cell);
+      color: var(--text);
       transition: var(--transition);
     }
     #gameOverMenu button:hover {
-      font-weight: 700;
       background: var(--cell-hover);
+      font-weight: 700;
     }
     #gameOverMenu button:active {
       animation: clickAnim 0.2s ease forwards;
-    }
-    #gameOverMenu button.observe {
-      width: 80px;
-      font-size: 0.85rem;
-      padding: 0.3rem 0.5rem;
     }
   </style>
 </head>
 <body>
   <h1>Minesweeper</h1>
+  <h7>v 3.8</h7>
 
   <div class="controls" id="difficultyButtons">
     <button data-difficulty="easy">Easy (8x8, 10)</button>
@@ -244,9 +267,9 @@
 
   <!-- Game Over Menu -->
   <div id="gameOverMenu">
-    <h2>Game Over</h2>
+    <h2 id="gameOverMsg">Game Over</h2>
     <button id="gameOverRestartBtn">Restart</button>
-    <button class="observe" id="observeBtn">Observe the Board</button>
+    <button id="observeBtn">Observe the Board</button>
     <button id="quitBtn">Quit</button>
   </div>
 
@@ -265,6 +288,7 @@
     const mineDisplay = document.getElementById("mineCount");
     const timerDisplay = document.getElementById("timer");
     const gameOverMenu = document.getElementById("gameOverMenu");
+    const gameOverMsg = document.getElementById("gameOverMsg");
     const difficultyButtonsContainer = document.getElementById("difficultyButtons");
     const difficultyButtons = difficultyButtonsContainer.querySelectorAll('button[data-difficulty]');
     const clickSound = document.getElementById("clickSound");
@@ -314,7 +338,7 @@
 
     observeBtn.addEventListener("click", () => {
       playClickSoundAndAnimate(observeBtn);
-      observeBoard();
+      hideGameOverMenu();
     });
 
     quitBtn.addEventListener("click", () => {
@@ -323,7 +347,7 @@
         if (confirm("Are you sure you want to quit? This will close the tab.")) {
           window.close();
           // fallback if window.close() is blocked:
-          // alert("Please close this tab manually.");
+          alert("Access denied. Please close this tab manually to quit.");
         }
       }, 200);
     });
@@ -442,11 +466,12 @@
       cell.element.classList.add("revealed");
       if (cell.mine) {
         cell.element.classList.add("mine");
-        cell.element.textContent = "";
+        cell.element.textContent = "💣";  // bomb emoji on exploded mine
         stopTimer();
-        revealAll();
+        revealAll(true);
         explosionSound.play();
         gameOver = true;
+        gameOverMsg.textContent = "Game Over! You hit a mine.";
         showGameOverMenu();
         return;
       }
@@ -464,16 +489,22 @@
       checkWin();
     }
 
-    function revealAll() {
+    function revealAll(showWrongFlags = false) {
       board.flat().forEach((cell) => {
         if (cell.mine) {
           cell.element.classList.add("mine");
-          cell.element.textContent = ""; // no bomb emoji
+          cell.element.textContent = "💣";  // bomb emoji on all mines at game over
+        }
+        if (!cell.mine && cell.flagged && showWrongFlags) {
+          cell.element.textContent = "✗"; // X for wrong flag
+          cell.element.classList.add("wrong-flag");
           cell.element.classList.remove("flagged");
         }
         cell.revealed = true;
         cell.element.classList.add("revealed");
+        cell.element.classList.remove("flagged");
       });
+      updateMineCount();
     }
 
     function updateMineCount() {
@@ -486,7 +517,7 @@
       timerInterval = setInterval(() => {
         timer++;
         timerDisplay.textContent = timer;
-      }, 800);
+      }, 1000);
     }
 
     function stopTimer() {
@@ -498,16 +529,8 @@
       createBoard();
     }
 
-    function quitGame() {
-      // handled in quitBtn click
-    }
-
-    function observeBoard() {
-      hideGameOverMenu();
-    }
-
     function showGameOverMenu() {
-      gameOverMenu.style.display = "block";
+      gameOverMenu.style.display = "flex";
     }
 
     function hideGameOverMenu() {
@@ -528,8 +551,9 @@
       }
       if (won && !gameOver) {
         stopTimer();
-        alert(`You cleared the board in ${timer} seconds!`);
         gameOver = true;
+        gameOverMsg.textContent = `You cleared the board in ${timer} seconds!`;
+        revealAll(false);
         showGameOverMenu();
       }
     }
