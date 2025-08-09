@@ -138,9 +138,6 @@
       transition: var(--transition);
       font-weight: 600;
       font-family: monospace;
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
 
     .cell:hover {
@@ -152,24 +149,21 @@
       cursor: default;
     }
 
-    /* Flagged cells show Unicode flag ⚑, perfectly centered */
+    /* Flagged cells show Unicode flag ⚑ with normal background */
     .cell.flagged {
       background-color: var(--cell);
       color: white;
       cursor: pointer;
       font-weight: 900;
-      font-size: 20px;
+      font-size: 18px;
       user-select: none;
-      /* flex centering from .cell applies */
+      line-height: 32px;
     }
 
-    /* Mines reveal with red background and bomb emoji centered */
+    /* Mines reveal with red background, no text */
     .cell.mine {
       background-color: var(--mine);
-      color: white;
-      font-size: 20px;
-      user-select: none;
-      /* flex centering from .cell applies */
+      color: transparent;
     }
 
     .cell.revealed.number-1 { color: var(--number-1); }
@@ -298,14 +292,6 @@
       }, { once: true });
     }
 
-    // Play click animation on any element
-    function playClickAnimation(element) {
-      element.style.animation = 'clickAnim 0.2s ease forwards';
-      element.addEventListener('animationend', () => {
-        element.style.animation = '';
-      }, { once: true });
-    }
-
     difficultyButtons.forEach(btn => {
       btn.addEventListener("click", () => {
         if (gameOver) return;
@@ -335,7 +321,9 @@
       playClickSoundAndAnimate(quitBtn);
       setTimeout(() => {
         if (confirm("Are you sure you want to quit? This will close the tab.")) {
-          window.open('', '_self').close(); // try to close tab properly
+          window.close();
+          // fallback if window.close() is blocked:
+          // alert("Please close this tab manually.");
         }
       }, 200);
     });
@@ -420,10 +408,8 @@
         startTimer();
       }
       reveal(r, c);
-
       clickSound.currentTime = 0;
       clickSound.play();
-      playClickAnimation(this);
     }
 
     function handleRightClick(e) {
@@ -456,7 +442,7 @@
       cell.element.classList.add("revealed");
       if (cell.mine) {
         cell.element.classList.add("mine");
-        cell.element.textContent = "💣";
+        cell.element.textContent = "";
         stopTimer();
         revealAll();
         explosionSound.play();
@@ -482,7 +468,7 @@
       board.flat().forEach((cell) => {
         if (cell.mine) {
           cell.element.classList.add("mine");
-          cell.element.textContent = "💣";
+          cell.element.textContent = ""; // no bomb emoji
           cell.element.classList.remove("flagged");
         }
         cell.revealed = true;
@@ -510,6 +496,10 @@
 
     function restartGame() {
       createBoard();
+    }
+
+    function quitGame() {
+      // handled in quitBtn click
     }
 
     function observeBoard() {
