@@ -298,6 +298,14 @@
       }, { once: true });
     }
 
+    // Play click animation on any element
+    function playClickAnimation(element) {
+      element.style.animation = 'clickAnim 0.2s ease forwards';
+      element.addEventListener('animationend', () => {
+        element.style.animation = '';
+      }, { once: true });
+    }
+
     difficultyButtons.forEach(btn => {
       btn.addEventListener("click", () => {
         if (gameOver) return;
@@ -325,7 +333,12 @@
 
     quitBtn.addEventListener("click", () => {
       playClickSoundAndAnimate(quitBtn);
-      alert("Please close the tab to quit the game.")
+      setTimeout(() => {
+        if (confirm("Are you sure you want to quit? This will close the tab.")) {
+          window.open('', '_self').close(); // try to close tab properly
+        }
+      }, 200);
+    });
 
     function updateDifficultyButtons() {
       difficultyButtons.forEach(btn => {
@@ -407,8 +420,10 @@
         startTimer();
       }
       reveal(r, c);
+
       clickSound.currentTime = 0;
       clickSound.play();
+      playClickAnimation(this);
     }
 
     function handleRightClick(e) {
